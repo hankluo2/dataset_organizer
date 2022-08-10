@@ -1,12 +1,33 @@
 from pathlib import Path
 import shutil
 import random
+from pathlib import Path
+import shutil
+import random
+from typing import List
 
 
-def split_train_val_set(data_root_dir: str,
-                        file_format: str,
-                        ratio: float,
-                        shuffle=False):
+def split_train_val_set(data_root_dir: str, file_formats: List[str], ratio: float, shuffle=False):
+    """Find the class folders in a dataset structured as follows::
+
+        directory/
+        ├── class_x
+        │   ├── xxx.ext
+        │   ├── xxy.ext
+        │   └── ...
+        │       └── xxz.ext
+        └── class_y
+            ├── 123.ext
+            ├── nsdf3.ext
+            └── ...
+            └── asd932_.ext
+    """
+    # searching_pattern = ''
+    # for format in file_formats:
+    #     searching_pattern += f'({format})?'
+    # print(searching_pattern)
+    searching_pattern = ','.join(file_formats)
+
     output_dir = 'splitted_' + data_root_dir
     # find classes and get information
     class2imageset = {}  # Dict[class]: file_path
@@ -14,7 +35,7 @@ def split_train_val_set(data_root_dir: str,
         if node.is_dir():
             class2imageset[node.stem] = []
             # custom a searching logic to get
-            for item in node.rglob(f"*.{file_format}"):
+            for item in node.rglob(f"*[{searching_pattern}]"):
                 class2imageset[node.stem].append(item)
 
     # sort lists of each class
@@ -44,17 +65,11 @@ def split_train_val_set(data_root_dir: str,
     for phase in ['train', 'val']:
         for klass in phase2set[phase]:
             cp_dir = Path(output_dir) / phase / klass
-            # cp_dir.mkdir(parents=True, exist_ok=True)  # TODO: test only
-            cp_dir.mkdir(parents=True, exist_ok=False)
+            cp_dir.mkdir(parents=True, exist_ok=True)  # TODO: test only
+            # cp_dir.mkdir(parents=True, exist_ok=False)
 
             src_paths = phase2set[phase][klass]
             for src_path in src_paths:
                 dest_path = cp_dir / src_path.name
-                print(src_path, dest_path)
+                # print(src_path, dest_path)
                 shutil.copy(src_path, dest_path)
-
-
-if __name__ == "__main__":
-    data_root_dir = 'chss_dataset'
-    ratio = 0.8
-    split_train_val_set(data_root_dir, 'jpg', ratio)
